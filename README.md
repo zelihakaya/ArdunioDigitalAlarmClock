@@ -6,7 +6,8 @@ Button 2: Pressing button 2 for 3 seconds activates the alarm. If it is pressed 
 Button 3: When it is pressed for 3 seconds, it changes the temperature to Fahrenheit. Then when it is pressed for 3 seconds, it changes the temperature back to Celsius.
 Button 4: When it is pressed once (1 second) it changes the time mode from 12H to 24H or the reverse.
 
-Scenarios:::::::::::::::::::::::::::::::::::::::::
+Scenarios:
+
 Setting The Alarm:
 1. Press B2 for 3 seconds to turn alarm ON.
 2. Press button 4 for 1 second to snooze it.
