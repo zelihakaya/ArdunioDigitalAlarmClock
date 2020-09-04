@@ -1,0 +1,419 @@
+#include <LiquidCrystal.h>
+// initialize the library with the numbers of the interface pins
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+int Bfirst = 9; //1. button
+int Bsecond = 8; //2. button
+int Bthird = 7; //3. button
+int Bfourth = 6; //4. button
+unsigned long time=0;
+int saniye = 0;
+int dakika = 0;
+int saat = 0;
+int saat2 = 0;
+int changesituation = 0;
+int timepressbutton = 0;
+int timepressbutton2 = 0;
+int timepressbutton3 = 0;
+int situationofbutton = 0;
+int situationofalarm = 0;
+int timebuzzer = 0;
+int sayac = 0;
+int sayac2=0;
+int sayac3=0;
+int setmin = 0;
+int timeblink = 0;
+int houralarm=0;
+int minalarm=0;
+int buzzer=10;
+int tempSensor = A0;
+int sensorValue;
+double temp; 
+int situationoftemp=0;
+
+
+void setup() { 
+    lcd.begin(16, 2);
+    lcd.clear();
+    pinMode(Bfirst, INPUT);
+    pinMode(Bsecond, INPUT);
+    pinMode(Bthird, INPUT);
+    pinMode(Bfourth, INPUT);
+	pinMode(buzzer, OUTPUT); 
+}
+
+void loop() {
+	timer();
+	changetime();
+	displaytime();
+	set();  
+	displayalarm();
+	switchalarm();
+	alarmbuzzer();
+	tempdisplay();
+	snooze();
+}
+
+void timer () {
+  if (millis()-time >= 1000) { //1 saniye olunca 
+    saniye++;				
+    time=millis();
+   }
+ if (saniye == 60) { //sn 60 olunca dk'ya cevir
+    dakika++;
+    saniye=0;
+   }
+ if (dakika == 60) { //dk 60 olunca saati arttır
+    saat++;
+    dakika=0;
+   }
+}
+
+void changetime() {
+ if (digitalRead(Bfourth) == 1 ) {
+   if (changesituation==0){//su an 0-24 ise 
+     changesituation=1; //am/pm çevir.. eğer changesituation 1 ise am pm aktif
+     lcd.clear();
+     delay(50);
+    }
+   else if (changesituation==1 ){
+     changesituation=0;
+     lcd.clear();
+     delay(50);
+    }  
+  } 
+} 
+
+void displaytime() {
+  if (changesituation==0) {
+     saat=saat; 
+     lcd.setCursor(0,0); 
+  	 lcd.print("Clock;");
+  
+     lcd.setCursor(7,0); 
+     lcd.print(saat);
+  
+     lcd.setCursor(9,0); 
+     lcd.print(":");
+  
+     lcd.setCursor(10,0); 
+     lcd.print(dakika);
+    }
+  
+   else if (changesituation==1) { 
+      if (saat>0 && saat <12 && saat!=0 && saat!=12) {
+         saat2=saat;
+         lcd.setCursor(13,0); 
+         lcd.print("AM");
+        }
+     
+      if (saat>12 && saat <24 ) {
+         saat2=saat-12;
+         lcd.setCursor(13,0); 
+         lcd.print("PM");
+        }
+    
+      if (saat==0 ) {
+         saat2=12;
+         lcd.setCursor(13,0); 
+         lcd.print("AM");
+        }
+     
+      if (saat==12 ) {
+         saat2=12;
+         lcd.setCursor(13,0); 
+         lcd.print("PM");
+        }
+     
+      lcd.setCursor(0,0); 
+  	  lcd.print("Clock;");
+  
+      lcd.setCursor(7,0); 
+      lcd.print(saat2);
+  
+      lcd.setCursor(9,0); 
+      lcd.print(":");
+  
+      lcd.setCursor(10,0); 
+      lcd.print(dakika);   
+   }   
+}
+
+void switchalarm() {
+  if (situationofalarm==1) {
+      lcd.setCursor(5,1); 
+  	  lcd.print("ON");
+    }
+  else if (situationofalarm==0) {
+      lcd.setCursor(5,1); 
+  	  lcd.print("OFF");
+      noTone(buzzer);
+     }
+  
+ if (digitalRead(Bsecond) == 1 && situationofbutton == 0) {
+    timepressbutton2=time;
+    situationofbutton++;  
+    sayac=0;
+  } 
+  
+ if (digitalRead(Bsecond) == 0) {
+    timepressbutton2=millis();
+    situationofbutton--;
+    sayac=0;
+  } 
+  
+ if (digitalRead(Bsecond) == 1 && time-timepressbutton2 >= 3000 && sayac==0 ) {
+    lcd.clear();
+    sayac=1;
+    if (situationofalarm==0) {
+       situationofalarm=1;
+     }
+   else {
+       situationofalarm=0;
+     }
+    delay(100);
+    situationofbutton--;
+   }    
+} 
+
+void alarmbuzzer() {
+  if (dakika==minalarm && sayac3==0 ) { 
+     sayac3++;
+     timebuzzer=time;
+    }
+  if (situationofalarm==1 && saat==houralarm && dakika==minalarm){     
+      
+    if (time-timebuzzer<=4) {
+        tone(buzzer, 2500);  
+      }
+     else if (time-timebuzzer>4 && time-timebuzzer<=8) {
+         noTone(buzzer);
+      }
+    else if (time-timebuzzer>8 && time-timebuzzer<=12) {
+        tone(buzzer, 3500);   
+      }
+     else if (time-timebuzzer>12 && time-timebuzzer<=16) {
+         noTone(buzzer);
+      }
+    else if (time-timebuzzer>16) {
+      timebuzzer=time;
+      
+      }
+   }
+}
+
+void snooze() { //4. butona basıldıysa ve alarmın saati normal saate esitse
+  if (digitalRead(Bfourth) == 1 && situationofalarm==1 && dakika==minalarm) { 
+    minalarm++;
+     noTone(buzzer);
+    sayac3--;
+    delay(100);
+ } 
+} 
+
+void tempdisplay() { //sicaklik display
+  sensorValue = analogRead(A0);
+  temp = (double)sensorValue / 1024;  
+  temp = temp * 5;                     
+  temp = temp - 0.5;                  
+  temp = temp * 100;
+  
+  if (situationoftemp==0) { 
+ 	 lcd.setCursor(10,1); 
+	 lcd.print(temp);
+     lcd.setCursor(15,1); 
+     lcd.print("C");
+     delay(100);
+    }
+  else if (situationoftemp==1) {
+     lcd.setCursor(10,1); 
+	 lcd.print(temp*1.8+32);
+     lcd.setCursor(15,1); 
+     lcd.print("F");
+     delay(100);
+    }
+  
+  if (digitalRead(Bthird) == 1 && situationofbutton == 0 && sayac2 !=0) {
+     timepressbutton3=time;
+     situationofbutton++;  
+     sayac2=0;
+    } 
+  
+  if (digitalRead(Bthird) == 0) {
+     timepressbutton3=millis();
+     situationofbutton--;
+     sayac2=0;
+    } 
+   
+  if (digitalRead(Bthird) == 1 && time-timepressbutton3 >= 3000 && sayac2==0) {
+    sayac2=1;
+    if (situationoftemp==0) {
+       situationoftemp=1;
+      }
+    else {
+       situationoftemp=0;
+      }
+    delay(100);
+    situationofbutton--;
+   }  
+}
+
+void set() {
+  if (digitalRead(Bfirst) == 1 && situationofbutton == 0) {
+     timepressbutton=time;
+     situationofbutton++;  
+   } 
+  
+  if (digitalRead(Bfirst) == 0) {
+     timepressbutton=millis();
+     situationofbutton--;
+   } 
+  
+  if (digitalRead(Bfirst) == 1 && time-timepressbutton >= 3000 && setmin==0) {
+     setmin++;
+     lcd.clear();
+     lcd.setCursor(0,0); 
+  	 lcd.print("SET MIN OF TIME");
+     delay(100);
+     situationofbutton--;
+   }  
+  
+   while (setmin==1) {  //set min of time
+      
+     if (digitalRead(Bsecond) == 1 && dakika<59) {  
+        dakika++;
+        delay(100);
+       }
+     
+     if (digitalRead(Bthird) == 1 && dakika>0)  {  
+        dakika--;
+        delay(100);
+       }
+     if (dakika==59 && digitalRead(Bsecond) == 1) { 
+        saat++;
+        dakika=0;
+        delay(100);
+        lcd.clear();
+       }
+     lcd.setCursor(0,0); 
+  	 lcd.print("SET MIN OF TIME");     
+     displayclock();
+     
+     if (digitalRead(Bfourth) == 1) {
+       setmin++;
+       delay(100);
+       lcd.clear();
+       lcd.setCursor(0,0); 
+  	   lcd.print("SET HOUR OF ALARM");
+      }     
+   }   
+  
+  while (setmin==2) {  //set hour of time
+     
+     if (digitalRead(Bsecond) == 1 && saat<23) {  
+        saat++;
+        delay(100);
+       }
+     
+     if (digitalRead(Bthird) == 1 && saat>0)  {  
+        saat--;
+        delay(100);
+       }
+    
+     if (saat==23 && digitalRead(Bsecond) == 1) { 
+        saat=0;
+        delay(100);
+        lcd.clear();
+     }
+     lcd.setCursor(0,0); 
+  	 lcd.print("SET HOUR OF TIME");     
+     displayclock();
+     
+     if (digitalRead(Bfourth) == 1) {
+        setmin++;
+        delay(100);
+   	 	lcd.clear();
+    	lcd.setCursor(0,0); 
+  		lcd.print("SET MIN OF ALARM");
+   	  }      
+   }   
+  
+  while (setmin==3) {  //set min of alarm
+       
+     if (digitalRead(Bsecond) == 1 && minalarm<59) {  
+        minalarm++;
+        delay(100);
+       }
+     
+     if (digitalRead(Bthird) == 1 && minalarm>0)  {  
+        minalarm--;
+        delay(100);
+       }
+     if (minalarm==59 && digitalRead(Bsecond) == 1) { 
+        houralarm++;
+        minalarm=0;
+        delay(100);
+        lcd.clear();
+       }
+     lcd.setCursor(0,0); 
+  	 lcd.print("SET MIN OF ALARM");     
+     displayalarm();
+     
+      if (digitalRead(Bfourth) == 1) {
+         setmin++;
+    	 delay(100);
+    	 lcd.clear();
+    	 lcd.setCursor(0,0); 
+  		 lcd.print("SET MIN OF ALARM");
+    	 break;
+       }     
+   }   
+  
+  while (setmin==4) {  //set hour of alarm
+     
+     if (digitalRead(Bsecond) == 1 && houralarm<23) {  
+        houralarm++;
+        delay(100);
+       }
+     
+     if (digitalRead(Bthird) == 1 && houralarm>0)  {  
+        houralarm--;
+        delay(100);
+       }
+     if (houralarm==23 && digitalRead(Bsecond) == 1) { 
+        houralarm=0;
+        delay(100);
+        lcd.clear();
+       }
+     lcd.setCursor(0,0); 
+  	 lcd.print("SET HOUR OF ALARM");     
+     displayalarm();
+     
+     if (digitalRead(Bfourth) == 1) {
+        setmin=0;
+        lcd.clear();
+      }      
+   } 
+} 
+
+void displayclock() {
+     lcd.setCursor(0,1); 
+     lcd.print(saat);
+  
+     lcd.setCursor(2,1); 
+     lcd.print(":");
+  
+     lcd.setCursor(3,1); 
+     lcd.print(dakika);
+ } 
+
+void displayalarm() {
+     lcd.setCursor(0,1); 
+     lcd.print(houralarm);
+  
+     lcd.setCursor(2,1); 
+     lcd.print(":");
+  
+     lcd.setCursor(3,1); 
+     lcd.print(minalarm);
+ } 
+ 
